@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毎日続けると必ず上達するTyping Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="index3.js"></script>
+    <style>
+        :root {
+            /* 目に優しい未来的な配色 */
+            --primary-color: #4cc9f0;      /* 少し落ち着いたシアン */
+            --background-color: #0a0a1a;   /* #1d2d44:深いネイビー */
+            --text-color: #f0f8ff;         /* アリスブルー（白に近いが柔らかい） */
+            --container-bg: #1a1a2e;       /* #3e5c76:スレートブルー */
+            --glow-color: rgba(76, 201, 240, 0.4); /* プライマリカラーの柔らかい光 */
+        }
+        body {
+            font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s;
+        }
+        .container {
+            position: relative;
+            width: 900px;
+            padding: 30px 40px;
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 20px var(--glow-color);
+            text-align: center;
+        }
+        #start-screen, #result-screen {
+            display: block;
+        }
+        #game-screen {
+            display: none;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-shadow: 0 0 8px var(--glow-color);
+            font-size: 36px;
+        }
+        .btn {
+            padding: 12px 25px;
+            font-size: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            cursor: pointer;
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            background-color: transparent;
+            color: var(--primary-color);
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+        }
+        #problem-display {
+            font-size: 38px;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            min-height: 50px;
+            text-shadow: 0 0 3px rgba(240, 248, 255, 0.7);
+        }
+        .typed-char { color: #9ab; }
+        .current-char {
+             color: #fff;
+             background-color: var(--glow-color);
+             border-radius: 2px;
+        }
+        #japanese-translation {
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            font-size: 24px;
+            color: #bdc3c7; /* 少し明るいグレー */
+            height: 40px;
+            margin-top: 15px;
+        }
+        #result-screen h1 { color: #50fa7b; text-shadow: 0 0 10px #50fa7b; }
+        .result-item { font-size: 22px; margin: 15px 0; }
+        
+        /* 一時停止機能のスタイル */
+        #pause-resume-btn {
+            padding: 5px 15px;
+            font-size: 16px;
+        }
+        #pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(29, 45, 68, 0.85); /* 背景色に合わせた半透明 */
+            border-radius: 15px;
+            display: none; /* 通常は非表示 */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+        #pause-overlay h2 {
+            font-size: 60px;
+            color: var(--primary-color);
+            text-shadow: 0 0 15px var(--glow-color);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen">
+        <h1>毎日続けると必ず上達するTyping Game</h1>
+        <p style="font-size: 18px; color: #bdc3c7;">Select Your Training Protocol:</p>
+        <button class="btn" onclick="startGame(5)">5 min</button>
+        <button class="btn" onclick="startGame(10)">10 min</button>
+        <button class="btn" onclick="startGame(20)">20 min</button>
+    </div>
+
+    <div id="game-screen">
+        <div id="status-bar">
+            <div id="timer">TIME: 0:00</div>
+            <div id="score">SCORE: 0</div>
+            <button class="btn" id="pause-resume-btn" onclick="togglePause()">PAUSE</button>
+        </div>
+        <div id="problem-display"></div>
+        <div id="japanese-translation"></div>
+        <p style="color: #888; margin-top: 30px;">[ Space: Replay Audio ] [ Enter: Next ]</p>
+    </div>
+
+    <div id="result-screen">
+        <h1>Mission Complete</h1>
+        <div id="final-results"></div>
+        <button class="btn" onclick="location.reload()">Re-Challenge</button>
+    </div>
+
+    <div id="pause-overlay">
+        <h2>PAUSED</h2>
+        <button class="btn" id="resume-btn-overlay" onclick="togglePause()">RESUME</button>
+    </div>
+</div>
+
+<script>
+    // // --- 問題データ (前回と同じ) ---
+    // const verbData = [ { "word": "work", "japanese": "働く", "type": "動詞", "examples": [ { "form": "現在形(三人称単数)", "sentence": "He works at a bank.", "japanese": "彼は銀行で働いています。" }, { "form": "過去形", "sentence": "I worked late last night.", "japanese": "私は昨夜遅くまで働きました。" }, { "form": "否定文", "sentence": "She does not work on Sundays.", "japanese": "彼女は日曜日に働きません。" }, { "form": "命令文", "sentence": "Work hard for your dream.", "japanese": "あなたの夢のために一生懸命働きなさい。" }, { "form": "疑問文", "sentence": "Do you work on weekends?", "japanese": "あなたは週末に働きますか？" }, { "form": "助動詞", "sentence": "I can work from home today.", "japanese": "私は今日、家で働くことができます。" }, { "form": "疑問詞", "sentence": "Where do you work?", "japanese": "あなたはどこで働いていますか？" }, { "form": "未来形", "sentence": "I will work tomorrow.", "japanese": "私は明日働きます。" }, { "form": "現在進行形", "sentence": "She is working now.", "japanese": "彼女は今働いています。" }, { "form": "現在完了形", "sentence": "He has worked here for five years.", "japanese": "彼はここで5年間働いています。" }, { "form": "不定詞", "sentence": "I want to work with children.", "japanese": "私は子供たちと一緒に働きたいです。" } ] }, { "word": "study", "japanese": "勉強する", "type": "動詞", "examples": [ { "form": "現在形(三人称単数)", "sentence": "She studies English every day.", "japanese": "彼女は毎日英語を勉強します。" }, { "form": "過去形", "sentence": "He studied for the test.", "japanese": "彼はテストのために勉強しました。" }, { "form": "否定文", "sentence": "I do not study on weekends.", "japanese": "私は週末は勉強しません。" }, { "form": "命令文", "sentence": "Study hard every day.", "japanese": "毎日一生懸命勉強しなさい。" }, { "form": "疑問文", "sentence": "Do you study math?", "japanese": "あなたは数学を勉強しますか？" }, { "form": "助動詞", "sentence": "You must study more.", "japanese": "あなたはもっと勉強しなければなりません。" }, { "form": "疑問詞", "sentence": "What do you study?", "japanese": "あなたは何を勉強していますか？" }, { "form": "未来形", "sentence": "I will study abroad next year.", "japanese": "私は来年留学します。" }, { "form": "現在進行形", "sentence": "They are studying in the library.", "japanese": "彼らは図書館で勉強しています。" }, { "form": "現在完了形", "sentence": "I have studied Japanese for three years.", "japanese": "私は日本語を3年間勉強しています。" }, { "form": "不定詞", "sentence": "He decided to study law.", "japanese": "彼は法律を勉強することを決心しました。" } ] }, { "word": "play", "japanese": "遊ぶ,演奏する", "type": "動詞", "examples": [ { "form": "現在形(三人称単数)", "sentence": "He plays the guitar very well.", "japanese": "彼はとても上手にギターを弾きます。" }, { "form": "過去形", "sentence": "We played soccer yesterday.", "japanese": "私たちは昨日サッカーをしました。" }, { "form": "否定文", "sentence": "They don't play video games.", "japanese": "彼らはテレビゲームをしません。" }, { "form": "命令文", "sentence": "Play outside with your friends.", "japanese": "友達と外で遊びなさい。" }, { "form": "疑問文", "sentence": "Do you play any sports?", "japanese": "あなたは何かスポーツをしますか？" }, { "form": "助動詞", "sentence": "Can you play the piano?", "japanese": "あなたはピアノを弾けますか？" }, { "form": "疑問詞", "sentence": "Who is playing the violin?", "japanese": "誰がバイオリンを弾いているのですか？" }, { "form": "未来形", "sentence": "She will play in the concert.", "japanese": "彼女はそのコンサートで演奏します。" }, { "form": "現在進行形", "sentence": "The children are playing in the park.", "japanese": "子供たちは公園で遊んでいます。" }, { "form": "現在完了形", "sentence": "He has played that game before.", "japanese": "彼は以前そのゲームで遊んだことがあります。" }, { "form": "不定詞", "sentence": "I like to play tennis.", "japanese": "私はテニスをするのが好きです。" } ] } ];
+
+    // --- グローバル変数 ---
+    let currentProblems = [];
+    let problemIndex = 0;
+    let charIndex = 0;
+    let score = 0;
+    let totalTyped = 0;
+    let correctTyped = 0;
+    let timerInterval;
+    let gameTime = 0;
+    let remainingTime = 0; // タイマーの残り時間を保持
+    let isPaused = false; // ★追加：一時停止状態を管理
+    const synth = window.speechSynthesis;
+
+    // --- DOM要素 ---
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const problemDisplay = document.getElementById('problem-display');
+    const japaneseTranslation = document.getElementById('japanese-translation');
+    const timerDisplay = document.getElementById('timer');
+    const scoreDisplay = document.getElementById('score');
+    const finalResults = document.getElementById('final-results');
+    const pauseResumeBtn = document.getElementById('pause-resume-btn');
+    const pauseOverlay = document.getElementById('pause-overlay');
+
+
+    // ★追加：一時停止・再開の切り替え関数
+    function togglePause() {
+        isPaused = !isPaused;
+        if (isPaused) {
+            clearInterval(timerInterval); // タイマーを停止
+            pauseResumeBtn.textContent = 'RESUME';
+            pauseOverlay.style.display = 'flex'; // オーバーレイ表示
+            synth.pause(); // 読み上げも一時停止
+        } else {
+            startTimer(remainingTime); // 残り時間からタイマーを再開
+            pauseResumeBtn.textContent = 'PAUSE';
+            pauseOverlay.style.display = 'none'; // オーバーレイ非表示
+            synth.resume(); // 読み上げ再開
+        }
+    }
+
+    // --- 音声読み上げ関数 ---
+    function speak(text, wordByWord = false, singleWord = '') {
+        if (synth.speaking) { synth.cancel(); }
+        const utter = new SpeechSynthesisUtterance();
+        utter.lang = 'en-US';
+        utter.rate = 0.9;
+        if(singleWord) {
+             utter.text = singleWord;
+             synth.speak(utter);
+             return;
+        }
+        utter.text = wordByWord ? text.split(' ').join(', ') : text;
+        synth.speak(utter);
+    }
+
+    // --- ゲームロジック ---
+    function startGame(minutes) {
+        gameTime = minutes * 60;
+        startScreen.style.display = 'none';
+        resultScreen.style.display = 'none';
+        gameScreen.style.display = 'block';
+        score = 0; totalTyped = 0; correctTyped = 0;
+        scoreDisplay.textContent = `SCORE: ${score}`;
+
+        generateProblems();
+        loadProblem();
+        startTimer(gameTime);
+    }
+    
+    // タイマー関数を修正
+    function startTimer(duration) {
+        let startTime = Date.now();
+        remainingTime = duration;
+
+        function update() {
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            remainingTime = duration - elapsedTime;
+            
+            if (remainingTime <= 0) {
+                remainingTime = 0;
+                endGame();
+            }
+            
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = Math.floor(remainingTime % 60);
+            timerDisplay.textContent = `TIME: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(update, 100); // 100msごとに更新して精度を上げる
+    }
+
+    function generateProblems() { /* 前回と同じ */ currentProblems = []; const shuffledVerbs = [...verbData].sort(() => 0.5 - Math.random()); for (const verb of shuffledVerbs) { currentProblems.push({ text: (verb.word + ' ').repeat(5).trim(), japanese: `${verb.type}: ${verb.japanese}`, isWordRepeat: true, baseWord: verb.word }); const shuffledExamples = [...verb.examples].sort(() => 0.5 - Math.random()); for (const ex of shuffledExamples) { currentProblems.push({ text: ex.sentence, japanese: ex.japanese, isWordRepeat: false }); } } }
+    function loadProblem() { /* 前回と同じ */ if (problemIndex >= currentProblems.length) { problemIndex = 0; } charIndex = 0; const problem = currentProblems[problemIndex]; updateProblemDisplay(); japaneseTranslation.textContent = problem.japanese; speak(problem.text, problem.isWordRepeat); }
+    function updateProblemDisplay() { /* 前回と同じ */ const problem = currentProblems[problemIndex]; const text = problem.text; const typedPart = text.substring(0, charIndex); const currentChar = text.substring(charIndex, charIndex + 1); const remainingPart = text.substring(charIndex + 1); problemDisplay.innerHTML = `<span class="typed-char">${typedPart}</span>` + (currentChar ? `<span class="current-char">${currentChar}</span>` : '') + `<span>${remainingPart}</span>`; }
+    
+    function endGame() {
+        clearInterval(timerInterval);
+        gameScreen.style.display = 'none';
+        resultScreen.style.display = 'block';
+
+        const elapsedTimeMinutes = (gameTime - remainingTime) / 60;
+        const wpm = (totalTyped > 0 && elapsedTimeMinutes > 0) ? Math.round((correctTyped / 5) / elapsedTimeMinutes) : 0;
+        const accuracy = totalTyped > 0 ? Math.round((correctTyped / totalTyped) * 100) : 0;
+
+        finalResults.innerHTML = `
+            <div class="result-item">Session Time: ${gameTime / 60} min</div>
+            <div class="result-item">Final Score: ${score}</div>
+            <div class="result-item">WPM (Words Per Minute): ${wpm}</div>
+            <div class="result-item">Accuracy: ${accuracy}%</div>
+        `;
+    }
+
+    // --- イベントリスナー ---
+    window.addEventListener('keydown', (e) => {
+        // ★追加：一時停止中はキー入力を無効化
+        if (isPaused || gameScreen.style.display !== 'block' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') {
+            return;
+        }
+
+        const problem = currentProblems[problemIndex];
+        const isFinished = charIndex === problem.text.length;
+
+        // Spaceキーが押された時の処理を明確化
+        if (e.code === 'Space') {
+            e.preventDefault(); // スペースキーでの画面スクロールを防ぐ
+            // if (isFinished) return; // 終わっていたらスペースは無効
+
+            // タイピング中のスペースキーか、音声再生キーか
+            const expectedChar = problem.text[charIndex];
+            if (expectedChar === ' ') {
+                 // タイプ処理へ
+            } else {
+                speak(problem.text, problem.isWordRepeat);
+                return; // 音声再生のみ行い、後の処理はしない
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (isFinished) { // 全てタイプし終えたら
+                problemIndex++;
+                loadProblem();
+            }
+            return;
+        }
+        
+        // タイプ入力処理
+        const expectedChar = problem.text[charIndex];
+        if (e.key === expectedChar) {
+            charIndex++;
+            score += 10;
+            totalTyped++;
+            correctTyped++;
+
+            if (e.key === ' ' || charIndex === problem.text.length) {
+                const typedText = problem.text.substring(0, charIndex).trim();
+                const typedWords = typedText.split(' ');
+                const lastWord = typedWords[typedWords.length-1];
+                speak('', false, lastWord);
+            }
+
+            updateProblemDisplay();
+
+            if (charIndex === problem.text.length) {
+                score += 100;
+            }
+        } else if (!isFinished && e.key.length === 1) {
+            totalTyped++;
+            document.body.style.animation = 'shake 0.3s';
+            setTimeout(() => { document.body.style.animation = ''; }, 300);
+        }
+        
+        scoreDisplay.textContent = `SCORE: ${score}`;
+    });
+</script>
+<style>
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-2px); }
+        75% { transform: translateX(2px); }
+    }
+</style>
+</body>
+</html>
